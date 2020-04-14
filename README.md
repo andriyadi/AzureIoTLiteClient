@@ -90,7 +90,7 @@ unsigned long lastTick = 0;
 
 void loop() {
 
-    if (iotclient.run()) {
+    if (!iotclient.run()) {
         return; //No point to continue
     }
 
