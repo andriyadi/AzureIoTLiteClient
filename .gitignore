@@ -7,3 +7,4 @@ _backups/
 .idea
 .idea/
 src/main.cpp
+src/explores/

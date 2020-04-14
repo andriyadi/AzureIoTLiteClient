@@ -17,16 +17,6 @@
 #else
 #endif
 
-//#define USE_WIFI_BUILTIN_SNTP         1
-//#define DEBUG_PORT                      Serial
-//#define DEBUG                           1
-//
-//#if DEBUG
-//#define DEBUGLOG(...) DEBUG_PORT.printf(__VA_ARGS__)
-//#else
-//#define DEBUGLOG(...)
-//#endif
-
 enum AzureIoTConnectType_e {
     AZURE_IOTC_CONNECT_SYMM_KEY,
     AZURE_IOTC_CONNECT_X509_CERT,
@@ -84,7 +74,7 @@ struct AzureIoTConfig_t {
     }
 };
 
-class AzureIoTCentralClient {
+class AzureIoTLiteClient {
 
 public:
 
@@ -101,8 +91,8 @@ public:
     typedef std::function<void(const AzureIoTCallbacks_e callbackType, const AzureIoTCallbackInfo_t *callbackInfo)> AzureIoTCallback;
     typedef std::function<void(const AzureIoTClientEvent_e eventType)> AzureIoTClientEventCallback;
 
-    AzureIoTCentralClient(Client& client);
-    ~AzureIoTCentralClient();
+    AzureIoTLiteClient(Client& client);
+    ~AzureIoTLiteClient();
 
     bool begin(AzureIoTConfig_t *config);
     bool run();
@@ -135,6 +125,10 @@ protected:
 
     AzureIoTConfig_t *config_ = NULL;
     AzureIoTClientEvent_e currentClientEvent_ = AzureIoTClientEventUnknown;
+
+    AzureIOT::StringBuffer currentDeviceId_;
+    AzureIOT::StringBuffer currentUsername_;
+    AzureIOT::StringBuffer currentPassword_;
 
     uint32_t messageId_ = 0;
     unsigned long lastConnCheck_ = 0, lastReconnectAttempt_ = 0;

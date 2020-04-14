@@ -8,7 +8,7 @@ This is simple sample code to connect to Azure IoT Central and publish some tele
 
 ```$xslt
 #include <Arduino.h>
-#include "AzureIoTCentralClient.h"
+#include "AzureIoTLiteClient.h"
 #include <WiFiClientSecure.h>
 
 const char* ssidName = "<CHANGE_THIS>";      // your network SSID (name of wifi network)
@@ -22,7 +22,7 @@ AzureIoTConfig_t iotconfig {
 };
 
 WiFiClientSecure wifiClient;
-AzureIoTCentralClient iotclient(wifiClient);
+AzureIoTLiteClient iotclient(wifiClient);
 bool isConnected = false;
 
 static bool connectWiFi() {

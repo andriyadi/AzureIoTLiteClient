@@ -1,4 +1,4 @@
-#include "AzureIoTCentralClient.h"
+#include "AzureIoTLiteClient.h"
 
 #if defined(RISCV)
 #include "wifi/DxWiFi.h"
@@ -29,14 +29,14 @@
 
 #define CHECK_NOT_NULL_RET_BOOL(x)          \
     if (x == NULL) {                        \
-        IOTC_LOG(F(TO_STRING_(x) "is NULL"));   \
+        IOTC_LOG(F(TO_STRING(x) "is NULL"));   \
         return false;                       \
     }
 
-AzureIoTCentralClient::AzureIoTCentralClient(Client &client) : client_(client) {
+AzureIoTLiteClient::AzureIoTLiteClient(Client &client) : client_(client) {
 }
 
-AzureIoTCentralClient::~AzureIoTCentralClient() {
+AzureIoTLiteClient::~AzureIoTLiteClient() {
 
     if (mqttClient_ != NULL) {
         // delete mqttClient_;
@@ -44,7 +44,7 @@ AzureIoTCentralClient::~AzureIoTCentralClient() {
     }
 }
 
-bool AzureIoTCentralClient::begin(AzureIoTConfig_t *config)
+bool AzureIoTLiteClient::begin(AzureIoTConfig_t *config)
 {
     setLogLevel(IOTC_LOGGING_ALL);
     
@@ -58,7 +58,7 @@ bool AzureIoTCentralClient::begin(AzureIoTConfig_t *config)
     return true;
 }
 
-bool AzureIoTCentralClient::connect(AzureIoTConfig_t *config) {
+bool AzureIoTLiteClient::connect(AzureIoTConfig_t *config) {
     if (config != NULL) {
         config_ = config;
     }
@@ -70,7 +70,7 @@ bool AzureIoTCentralClient::connect(AzureIoTConfig_t *config) {
     return false;
 }
 
-bool AzureIoTCentralClient::disconnect() {
+bool AzureIoTLiteClient::disconnect() {
 
     if (mqttClient_) {
         if (mqttClient_->connected()) {
@@ -89,7 +89,7 @@ bool AzureIoTCentralClient::disconnect() {
     return true;
 }
 
-bool AzureIoTCentralClient::run()
+bool AzureIoTLiteClient::run()
 {
     if (currentClientEvent_ == AzureIoTClientEventNTPSyncing) {
         if (requestTime()) {
@@ -141,35 +141,35 @@ bool AzureIoTCentralClient::run()
 }
 
 
-bool AzureIoTCentralClient::sendTelemetry(const char *payload, unsigned length) {
+bool AzureIoTLiteClient::sendTelemetry(const char *payload, unsigned length) {
     return sendTelemetryWithSystemProperties(payload, length, NULL, 0);
 }
 
-bool AzureIoTCentralClient::sendProperty(const char *payload, unsigned length) {
+bool AzureIoTLiteClient::sendProperty(const char *payload, unsigned length) {
     CHECK_NOT_NULL_RET_BOOL(payload);
     int ret = iotcSendProperty(payload, length);
     return (ret == 0);
 }
 
-bool AzureIoTCentralClient::sendEvent(const char *payload, unsigned length) {
+bool AzureIoTLiteClient::sendEvent(const char *payload, unsigned length) {
     return sendTelemetry(payload, length);
 }
 
-bool AzureIoTCentralClient::sendState(const char *payload, unsigned length) {
+bool AzureIoTLiteClient::sendState(const char *payload, unsigned length) {
     return sendTelemetry(payload, length);
     return false;
 }
 
-bool AzureIoTCentralClient::sendTelemetryWithSystemProperties(const char *payload, unsigned length,
-                                                              const char *sysPropPayload,
-                                                              unsigned sysPropPayloadLength) {
+bool AzureIoTLiteClient::sendTelemetryWithSystemProperties(const char *payload, unsigned length,
+                                                           const char *sysPropPayload,
+                                                           unsigned sysPropPayloadLength) {
     CHECK_NOT_NULL_RET_BOOL(payload);
     int ret = iotcSendTelemetryWithSystemProperties(payload, length, sysPropPayload, sysPropPayloadLength);
     return (ret == 0);
 }
 
 
-bool AzureIoTCentralClient::setLogging(IotcLogLevel level) {
+bool AzureIoTLiteClient::setLogging(IotcLogLevel level) {
     if (level < IOTC_LOGGING_DISABLED || level > IOTC_LOGGING_ALL) {
         IOTC_LOG(F("ERROR: (setLogging) invalid argument. ERROR:0x0001"));
         return false;
@@ -179,7 +179,7 @@ bool AzureIoTCentralClient::setLogging(IotcLogLevel level) {
     return true;
 }
 
-bool AzureIoTCentralClient::reconnectMqtt(const char *deviceId, const char *user, const char *pass) {
+bool AzureIoTLiteClient::reconnectMqtt(const char *deviceId, const char *user, const char *pass) {
 
     if (mqttClient_ == NULL) {
         return false;
@@ -228,7 +228,7 @@ bool AzureIoTCentralClient::reconnectMqtt(const char *deviceId, const char *user
     return mqttClient_->connected();
 }
 
-bool AzureIoTCentralClient::doConnect()
+bool AzureIoTLiteClient::doConnect()
 {
     if (currentClientEvent_ == AzureIoTClientEventConnected) {
         return true;
@@ -236,23 +236,26 @@ bool AzureIoTCentralClient::doConnect()
 
     changeEventTo(AzureIoTClientEventConnecting);
 
-    // Query IoT Hub hostname
-    AzureIOT::StringBuffer tmpHostname(STRING_BUFFER_128);
-    if (queryIoTHubHostname(*tmpHostname) == 1) {
-        return false;
-    }
-
-    AzureIOT::StringBuffer deviceId;
     AzureIOT::StringBuffer hostName;
-    AzureIOT::StringBuffer username;
-    AzureIOT::StringBuffer password;
 
     if (config_->connectType == AZURE_IOTC_CONNECT_CONNECTION_STRING) {
+        IOTC_LOG("Connect using Connection String");
         getUsernameAndPasswordFromConnectionString(config_->connectionString, strlen(config_->connectionString),
-                                                    hostName, deviceId,
-                                                    username, password);
+                                                    hostName, currentDeviceId_,
+                                                   currentUsername_, currentPassword_);
+
+
     }
     else if (config_->connectType == AZURE_IOTC_CONNECT_SYMM_KEY) {
+
+        assert(config_->scopeId != NULL && config_->deviceId != NULL);
+
+        // Query IoT Hub hostname
+        AzureIOT::StringBuffer tmpHostname(STRING_BUFFER_128);
+        if (queryIoTHubHostname(*tmpHostname) == 1) {
+            return false;
+        }
+
         AzureIOT::StringBuffer connString(STRING_BUFFER_256);
         int rc = snprintf(*connString, STRING_BUFFER_256,
                         "HostName=%s;DeviceId=%s;SharedAccessKey=%s",
@@ -260,7 +263,8 @@ bool AzureIoTCentralClient::doConnect()
         assert(rc > 0 && rc < STRING_BUFFER_256);
         connString.setLength(rc);
 
-        getUsernameAndPasswordFromConnectionString(*connString, rc, hostName, deviceId, username, password);
+        getUsernameAndPasswordFromConnectionString(*connString, rc, hostName, currentDeviceId_, currentUsername_, currentPassword_);
+
     }
     else if (config_->connectType == AZURE_IOTC_CONNECT_X509_CERT) {
         IOTC_LOG(F("ERROR: IOTC_CONNECT_X509_CERT NOT IMPLEMENTED"));
@@ -284,11 +288,11 @@ bool AzureIoTCentralClient::doConnect()
 
         // Add callback
         using namespace std::placeholders;
-        mqttClient_->setCallback(std::bind(&AzureIoTCentralClient::mqttCallback, this, _1, _2, _3));
+        mqttClient_->setCallback(std::bind(&AzureIoTLiteClient::mqttCallback, this, _1, _2, _3));
     }
 
     // Do actual MQTT connect
-    bool _mqttConncted = reconnectMqtt(*deviceId, *username, *password);
+    bool _mqttConncted = reconnectMqtt(*currentDeviceId_, *currentUsername_, *currentPassword_);
     if (!_mqttConncted) {
         // Clean up
         // delete mqttClient_;
@@ -305,8 +309,7 @@ bool AzureIoTCentralClient::doConnect()
     return true;
 }
 
-
-void AzureIoTCentralClient::mqttCallback(char *topic, uint8_t *payloadBuf, unsigned int payloadLength) {
+void AzureIoTLiteClient::mqttCallback(char *topic, uint8_t *payloadBuf, unsigned int payloadLength) {
 
     if (!topic || strlen(topic) == 0) {
         return;
@@ -373,7 +376,7 @@ void AzureIoTCentralClient::mqttCallback(char *topic, uint8_t *payloadBuf, unsig
     }
 }
 
-void AzureIoTCentralClient::changeEventTo(AzureIoTClientEvent_e event)
+void AzureIoTLiteClient::changeEventTo(AzureIoTClientEvent_e event)
 {
     currentClientEvent_ = event;
 
@@ -394,8 +397,10 @@ void AzureIoTCentralClient::changeEventTo(AzureIoTClientEvent_e event)
 //    return timeSinceEpoch;
 //}
 
-int AzureIoTCentralClient::queryIoTHubHostname(char *hostName)
+int AzureIoTLiteClient::queryIoTHubHostname(char *hostName)
 {
+    assert(config_->scopeId != NULL && config_->deviceId != NULL && config_->deviceKey != NULL);
+
     size_t authHeaderSize = 0;
     AzureIOT::StringBuffer authHeader(STRING_BUFFER_256);
     IOTC_LOG("- iotc.dps : getting auth...");
@@ -448,7 +453,7 @@ int AzureIoTCentralClient::queryIoTHubHostname(char *hostName)
     return 1;
 }
 
-int AzureIoTCentralClient::iotcRequestDeviceSetting() {
+int AzureIoTLiteClient::iotcRequestDeviceSetting() {
     MUST_CALL_AFTER_CONNECT(mqttClient_);
 
 #define getDeviceSettingsTopic "$iothub/twin/GET/?$rid=0"
@@ -463,7 +468,7 @@ int AzureIoTCentralClient::iotcRequestDeviceSetting() {
     return 0;;
 }
 
-int AzureIoTCentralClient::onCloudCommand(const char *method_name, const char *payload, size_t size, char **response, size_t *resp_size) {
+int AzureIoTLiteClient::onCloudCommand(const char *method_name, const char *payload, size_t size, char **response, size_t *resp_size) {
 
     assert(response != NULL && resp_size != NULL);
     *response = NULL;
@@ -493,12 +498,13 @@ int AzureIoTCentralClient::onCloudCommand(const char *method_name, const char *p
     return 500;
 }
 
-int AzureIoTCentralClient::handleDeviceTwinGetState(AzureIOT::StringBuffer &topicName,
-                                                        AzureIOT::StringBuffer &payload) {
+int AzureIoTLiteClient::handleDeviceTwinGetState(AzureIOT::StringBuffer &topicName, AzureIOT::StringBuffer &payload) {
 
     if (payload.getLength() == 0) {
         return 1;
     }
+
+    IOTC_LOG("Payload: %s. ==> Topic: %s", *payload, *topicName);
 
     jsobject_t desired, outDesired, outReported;
     jsobject_initialize(&desired, *payload, payload.getLength());
@@ -506,37 +512,42 @@ int AzureIoTCentralClient::handleDeviceTwinGetState(AzureIOT::StringBuffer &topi
     if (jsobject_get_object_by_name(&desired, "desired", &outDesired) != -1 &&
         jsobject_get_object_by_name(&desired, "reported", &outReported) != -1) {
 
+        IOTC_LOG("Payload 1 -> %d", jsobject_get_count(&desired));
         notifySettingsUpdatedCallback(topicName, "twin", payload);
 
     } else {
-        for (unsigned i = 0, count = jsobject_get_count(&desired); i < count;
-             i += 2) {
+        IOTC_LOG("Payload 2");
+        for (unsigned i = 0, count = jsobject_get_count(&desired); i < count; i += 2) {
+
             char *itemName = jsobject_get_name_at(&desired, i);
+            IOTC_LOG("ItemName: %s", itemName);
+
             if (itemName != NULL && itemName[0] != '$') {
                 notifySettingsUpdatedCallback(topicName, itemName, payload);
             }
+
             if (itemName) IOTC_FREE(itemName);
         }
     }
-    jsobject_free(&outReported);
+
+//    jsobject_free(&outReported);
+//    jsobject_free(&outDesired);
+
     jsobject_free(&desired);
-    jsobject_free(&outDesired);
 
     return 0;
 }
 
-int AzureIoTCentralClient::iotcEchoDesired(const char *propertyName, AzureIOT::StringBuffer &message, const char *status, int statusCode) {
+int AzureIoTLiteClient::iotcEchoDesired(const char *propertyName, AzureIOT::StringBuffer &message, const char *status, int statusCode) {
 
     jsobject_t rootObject;
     jsobject_initialize(&rootObject, *message, message.getLength());
     jsobject_t propertyNameObject;
 
-    if (jsobject_get_object_by_name(&rootObject, propertyName,
-                                    &propertyNameObject) != 0) {
-        IOTC_LOG(
-                "ERROR: echoDesired has failed due to payload doesn't include the "
-                "property => %s",
-                *message);
+    if (jsobject_get_object_by_name(&rootObject, propertyName, &propertyNameObject) != 0) {
+        IOTC_LOG("ERROR: echoDesired has failed due to payload doesn't include the property (%s) => %s",
+                 propertyName, *message);
+
         jsobject_free(&rootObject);
         return 1;
     }
@@ -544,9 +555,7 @@ int AzureIoTCentralClient::iotcEchoDesired(const char *propertyName, AzureIOT::S
     char *value = jsobject_get_data_by_name(&propertyNameObject, "value");
     double desiredVersion = jsobject_get_number_by_name(&rootObject, "$version");
 
-    const char *echoTemplate =
-            "{\"%s\":{\"value\":%s,\"statusCode\":%d,\
-\"status\":\"%s\",\"desiredVersion\":%d}}";
+    const char *echoTemplate = R"({"%s":{"value":%s,"statusCode":%d,"status":"%s","desiredVersion":%d}})";
     uint32_t buffer_size = strlen(echoTemplate) + strlen(value) +
                            3 /* statusCode */
                            + 32 /* status */ + 23 /* version max */;
@@ -574,32 +583,32 @@ int AzureIoTCentralClient::iotcEchoDesired(const char *propertyName, AzureIOT::S
     return 0;
 }
 
-int AzureIoTCentralClient::iotcSendTelemetryWithSystemProperties(const char *payload, unsigned length,
-                                                                 const char *sysPropPayload,
-                                                                 unsigned sysPropPayloadLength) {
+int AzureIoTLiteClient::iotcSendTelemetryWithSystemProperties(const char *payload, unsigned length,
+                                                              const char *sysPropPayload,
+                                                              unsigned sysPropPayloadLength) {
 
     MUST_CALL_AFTER_CONNECT(mqttClient_);
 
     if ((sysPropPayload == NULL && sysPropPayloadLength != 0) ||
         (sysPropPayload != NULL && sysPropPayloadLength == 0)) {
-        IOTC_LOG("ERROR: (iotcSendTelemetryWithSystemProperties) sysPropPayload "
-                 "doesn't match with sysPropPayloadLength");
+        IOTC_LOG("ERROR: (iotcSendTelemetryWithSystemProperties) sysPropPayload doesn't match with sysPropPayloadLength");
         return 1;
     }
 
     if ((sysPropPayload == NULL && sysPropPayloadLength != 0) ||
         (sysPropPayload != NULL && sysPropPayloadLength == 0)) {
-        IOTC_LOG("ERROR: (iotcSendTelemetryWithSystemProperties) sysPropPayload "
-                 "doesn't match with sysPropPayloadLength");
+        IOTC_LOG("ERROR: (iotcSendTelemetryWithSystemProperties) sysPropPayload doesn't match with sysPropPayloadLength");
         return 1;
     }
 
-    AzureIOT::StringBuffer topic(strlen(config_->deviceId) + strlen("devices/ /messages/events/") + sysPropPayloadLength);
+    const char *_deviceId = config_->deviceId != NULL? config_->deviceId: *currentDeviceId_;
+
+    AzureIOT::StringBuffer topic(strlen(_deviceId) + strlen("devices/ /messages/events/") + sysPropPayloadLength);
 
     if (sysPropPayloadLength > 0) {
-        topic.setLength(snprintf(*topic, topic.getLength(), "devices/%s/messages/events/%.*s", config_->deviceId, sysPropPayloadLength, sysPropPayload));
+        topic.setLength(snprintf(*topic, topic.getLength(), "devices/%s/messages/events/%.*s", _deviceId, sysPropPayloadLength, sysPropPayload));
     } else {
-        topic.setLength(snprintf(*topic, topic.getLength(), "devices/%s/messages/events/", config_->deviceId));
+        topic.setLength(snprintf(*topic, topic.getLength(), "devices/%s/messages/events/", _deviceId));
     }
 
     if (!mqttClient_->publish(*topic, payload, length)) {
@@ -611,7 +620,7 @@ int AzureIoTCentralClient::iotcSendTelemetryWithSystemProperties(const char *pay
     return 0;
 }
 
-int AzureIoTCentralClient::iotcSendProperty(const char *payload, unsigned length) {
+int AzureIoTLiteClient::iotcSendProperty(const char *payload, unsigned length) {
     MUST_CALL_AFTER_CONNECT(mqttClient_);
 
     const char *topicName = "$iothub/twin/PATCH/properties/reported/?$rid=%d";
@@ -627,7 +636,7 @@ int AzureIoTCentralClient::iotcSendProperty(const char *payload, unsigned length
     return 0;
 }
 
-void AzureIoTCentralClient::notifySettingsUpdatedCallback(AzureIOT::StringBuffer &topicName, const char *propertyName, AzureIOT::StringBuffer &payload) {
+void AzureIoTLiteClient::notifySettingsUpdatedCallback(AzureIOT::StringBuffer &topicName, const char *propertyName, AzureIOT::StringBuffer &payload) {
 
     const char *response = "completed";
     if (callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackSettingsUpdated]) {
@@ -655,7 +664,7 @@ void AzureIoTCentralClient::notifySettingsUpdatedCallback(AzureIOT::StringBuffer
     }
 }
 
-void AzureIoTCentralClient::notifyConfirmationCallback(const char *buffer, size_t size) {
+void AzureIoTLiteClient::notifyConfirmationCallback(const char *buffer, size_t size) {
     int result = 0;
 
     if (callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackMessageSent]) {
@@ -672,7 +681,7 @@ void AzureIoTCentralClient::notifyConfirmationCallback(const char *buffer, size_
     }
 }
 
-void AzureIoTCentralClient::notifyErrorCallback(const char *message) {
+void AzureIoTLiteClient::notifyErrorCallback(const char *message) {
     if (callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackError]) {
         AzureIoTCallbackInfo_t info;
         info.eventName = "Error";
@@ -687,7 +696,7 @@ void AzureIoTCentralClient::notifyErrorCallback(const char *message) {
     }
 }
 
-void AzureIoTCentralClient::notifyConnectionStatusCallback(AzureIoTConnectionState_e status) {
+void AzureIoTLiteClient::notifyConnectionStatusCallback(AzureIoTConnectionState_e status) {
     if (callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackConnectionStatus]) {
         AzureIoTCallbackInfo_t info;
         info.eventName = "ConnectionStatus";

@@ -59,8 +59,7 @@ long getEpoch() {
         time(&now);
     }
 
-    DEBUGLOG("Epoch: %lu\n\n", now);
-
+//    DEBUGLOG("Epoch: %lu\n\n", now);
     return now;// + (7*3600);
 }
 
