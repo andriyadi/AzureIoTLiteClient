@@ -4,6 +4,8 @@
 
 ## Sample code
 
+This is simple sample code to connect to Azure IoT Central and publish some telemetry and property.
+
 ```$xslt
 #include <Arduino.h>
 #include "AzureIoTCentralClient.h"
@@ -13,7 +15,7 @@ const char* ssidName = "<CHANGE_THIS>";      // your network SSID (name of wifi 
 const char* ssidPass = "<CHANGE_THIS>";      // your network password
 
 AzureIoTConfig_t iotconfig {
-        "<CHANGE_THIS>",                    // scopeId
+        "<CHANGE_THIS>",                    // Azure IoT Central - scopeId
         "<CHANGE_THIS>",                    // deviceId
         "<CHANGE_THIS>",                    // deviceKey
         AZURE_IOTC_CONNECT_SYMM_KEY         // Connection method
@@ -69,20 +71,22 @@ void setup() {
     if (!connectWiFi()) {
         while(1)
             ;
+        // No point to continue
     }
 
     // Add callbacks
     iotclient.setCallback(AzureIoTCallbackMessageSent, onAzureIoTEvent);
     iotclient.setCallback(AzureIoTCallbackCommand, onAzureIoTEvent);
     iotclient.setCallback(AzureIoTCallbackSettingsUpdated, onAzureIoTEvent);
-
+    
+    // Must call this
     iotclient.begin(&iotconfig);
     
     // Do connect
     iotclient.connect();
 }
 
-unsigned long lastTick = 0, loopId = 0;
+unsigned long lastTick = 0;
 
 void loop() {
 
@@ -90,32 +94,27 @@ void loop() {
         return; //No point to continue
     }
 
-    unsigned long ms = millis();
-    if (ms - lastTick > 10000) {  // send telemetry every 10 seconds
+    unsigned long now = millis();
+
+    // Send telemetry every 10 seconds
+    if (ms - lastTick > 10000) { 
+ 
         char msg[64] = {0};
         int pos = 0;
         bool errorCode = 0;
 
-        lastTick = ms;
+        lastTick = now;
 
-        if (loopId++ % 2 == 0) {
-            // Send telemetry
-            long tempVal = random(35, 40);
-            pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\": %.2f}", tempVal*1.0f);
-            msg[pos] = 0;
-            errorCode = iotclient.sendTelemetry(msg, pos);
+        // Send telemetry, randomized for now
+        long tempVal = random(35, 40);
+        pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\": %.2f}", tempVal*1.0f);
+        msg[pos] = 0;
+        errorCode = iotclient.sendTelemetry(msg, pos);
 
-            // Send property
-            pos = snprintf(msg, sizeof(msg) - 1, "{\"temperatureAlert\": %d}", (tempVal >= 38));
-            msg[pos] = 0;
-            errorCode = iotclient.sendProperty(msg, pos);
-
-        } else {
-            // Send property
-            pos = snprintf(msg, sizeof(msg) - 1, "{\"wornMask\": %d}", (random(0, 100) % 2 == 0));
-            msg[pos] = 0;
-            errorCode = iotclient.sendProperty(msg, pos);
-        }
+        // Send property
+        pos = snprintf(msg, sizeof(msg) - 1, "{\"temperatureAlert\": %d}", (tempVal >= 38));
+        msg[pos] = 0;
+        errorCode = iotclient.sendProperty(msg, pos);
 
         if (!errorCode) {
             LOG_ERROR("Sending message has failed with error code %d", errorCode);
