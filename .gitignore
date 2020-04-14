@@ -1,0 +1,9 @@
+.DS_Store
+.pioenvs
+.piolibdeps
+CMakeListsPrivate.txt
+cmake-build-debug/
+_backups/
+.idea
+.idea/
+src/main.cpp
