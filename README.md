@@ -6,7 +6,7 @@
 
 This is simple sample code to connect to Azure IoT Central and publish some telemetry and property.
 
-```$xslt
+```cpp
 #include <Arduino.h>
 #include "AzureIoTCentralClient.h"
 #include <WiFiClientSecure.h>
