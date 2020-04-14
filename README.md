@@ -6,7 +6,7 @@
 
 This is simple sample code to connect to Azure IoT Central and publish some telemetry and property.
 
-```$xslt
+```cpp
 #include <Arduino.h>
 #include "AzureIoTLiteClient.h"
 #include <WiFiClientSecure.h>
@@ -90,7 +90,7 @@ unsigned long lastTick = 0;
 
 void loop() {
 
-    if (iotclient.run()) {
+    if (!iotclient.run()) {
         return; //No point to continue
     }
 
