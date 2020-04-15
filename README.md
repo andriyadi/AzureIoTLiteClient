@@ -1,6 +1,9 @@
 # AzureIoTLiteClient
- Azure IoT Hub / Central lite client library for ESP32, using MQTT
+Azure IoT Hub / Central lite client library for ESP32, using MQTT. It's written in C++, and meant to be as lighter library if compared to [`esp-azure`](github.com/espressif/esp-azure) library. It currently needs Arduino framework. 
 
+You can still use ESP-IDF framework, as long as you include [`arduino-esp32`](github.com/espressif/arduino-esp32) as ESP-IDF component.
+
+I'm trying to make the library works for another platform, like K210 with Maixduino framework. Code optimization and seperation are already prepared. Need more testing.
 
 ## Sample code
 ### Azure IoT Central
@@ -258,3 +261,6 @@ void loop() {
     }
 }
 ```
+
+## Credits
+Significant amount of code is adapted from [here](https://github.com/Azure/iot-central-firmware/tree/master/ESP8266)
