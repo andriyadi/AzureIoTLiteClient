@@ -263,4 +263,6 @@ void loop() {
 ```
 
 ## Credits
-Significant amount of code is adapted from [here](https://github.com/Azure/iot-central-firmware/tree/master/ESP8266)
+
+* Significant amount of code is adapted from [here](https://github.com/Azure/iot-central-firmware/tree/master/ESP8266).
+* [PubSubClient](http://knolleary.net) is changed and bundled in this repo.
