@@ -5,7 +5,7 @@
 #if defined(ESP32)
 
 #include "../TimeUtils.h"
-#import <cstring>
+#include <cstring>
 #include <ctime>
 #include "lwip/apps/sntp.h"
 
@@ -17,9 +17,9 @@ void initializeSntp() {
 
     DEBUGLOG("Initializing SNTP...\r\n");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, (char*)"pool.ntp.org");
-    sntp_setservername(1, (char*)"us.pool.ntp.org");
-    sntp_setservername(2, (char*)"cn.ntp.org.cn");
+    sntp_setservername(0, (char*)"0.id.pool.ntp.org");
+    sntp_setservername(1, (char*)"1.id.pool.ntp.org");
+    sntp_setservername(2, (char*)"pool.ntp.org");
     sntp_init();
 
     sntpInitted = true;
@@ -35,7 +35,7 @@ bool requestTime() {
     int retry = 0;
     const int retry_count = 10;
     while(timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
-        DEBUGLOG("Waiting for system time to be set... (%d/%d)\r\n", retry, retry_count);
+        DEBUGLOG("Waiting for system time to be set... (%d/%d) [tm_year:%d]\r\n", retry, retry_count, timeinfo.tm_year);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
         time(&now);
         localtime_r(&now, &timeinfo);

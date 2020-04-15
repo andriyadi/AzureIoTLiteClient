@@ -1,11 +1,13 @@
+#include <Arduino.h>
+
 #if defined(RISCV)
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "IotcDefs.h"
-#include "Base64.h"
+#include "../IotcDefs.h"
+#include "../Base64.h"
 #include "../StringBuffer.h"
 
 #include "hmac-sha256.h"

@@ -11,12 +11,6 @@
 
 #include <functional>
 
-#if defined(RISCV)
-#include <WiFiEspUdp.h>
-#include "WiFiEspSecureClient.h"
-#else
-#endif
-
 enum AzureIoTConnectType_e {
     AZURE_IOTC_CONNECT_SYMM_KEY,
     AZURE_IOTC_CONNECT_X509_CERT,
@@ -129,6 +123,7 @@ protected:
     AzureIOT::StringBuffer currentDeviceId_;
     AzureIOT::StringBuffer currentUsername_;
     AzureIOT::StringBuffer currentPassword_;
+    AzureIOT::StringBuffer currentHostname_;
 
     uint32_t messageId_ = 0;
     unsigned long lastConnCheck_ = 0, lastReconnectAttempt_ = 0;

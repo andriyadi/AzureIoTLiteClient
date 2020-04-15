@@ -76,7 +76,7 @@ bool AzureIoTLiteClient::disconnect() {
         if (mqttClient_->connected()) {
             mqttClient_->disconnect();
         }
-        delete mqttClient_;
+        // delete mqttClient_;
         mqttClient_ = NULL;
     }
 
@@ -125,6 +125,8 @@ bool AzureIoTLiteClient::run()
                 bool ret = reconnectMqtt(*currentDeviceId_, *currentUsername_, *currentPassword_);
                 if (ret) {
                     lastReconnectAttempt_ = 0;
+
+                    changeEventTo(AzureIoTClientEventConnected);
                     notifyConnectionStatusCallback(AzureIoTConnectionOK);
                 }
                 return ret;
@@ -142,11 +144,16 @@ bool AzureIoTLiteClient::run()
                 return false;
 
             } else {
-//              mqttClient_->loop();
+                // #if defined(RISCV)
+                // mqttClient_->loop();
+                // #endif
             }
         }
-
+        
         mqttClient_->loop();
+        #if defined(RISCV)
+        delay(5);
+        #endif
     }
 
     return true;
@@ -207,7 +214,8 @@ bool AzureIoTLiteClient::reconnectMqtt(const char *deviceId, const char *user, c
         }
         else {
             IOTC_LOG("MQTT NOT connected. RC = %d", mqttClient_->state());
-            delay(2000);
+            client_.stop();
+            delay(4000);
             retry++;
         }
     }
@@ -248,12 +256,10 @@ bool AzureIoTLiteClient::doConnect()
 
     changeEventTo(AzureIoTClientEventConnecting);
 
-    AzureIOT::StringBuffer hostName;
-
     if (config_->connectType == AZURE_IOTC_CONNECT_CONNECTION_STRING) {
         IOTC_LOG("Connect using Connection String");
         getUsernameAndPasswordFromConnectionString(config_->connectionString, strlen(config_->connectionString),
-                                                    hostName, currentDeviceId_,
+                                                    currentHostname_, currentDeviceId_,
                                                    currentUsername_, currentPassword_);
 
 
@@ -275,7 +281,7 @@ bool AzureIoTLiteClient::doConnect()
         assert(rc > 0 && rc < STRING_BUFFER_256);
         connString.setLength(rc);
 
-        getUsernameAndPasswordFromConnectionString(*connString, rc, hostName, currentDeviceId_, currentUsername_, currentPassword_);
+        getUsernameAndPasswordFromConnectionString(*connString, rc, currentHostname_, currentDeviceId_, currentUsername_, currentPassword_);
 
     }
     else if (config_->connectType == AZURE_IOTC_CONNECT_X509_CERT) {
@@ -296,7 +302,7 @@ bool AzureIoTLiteClient::doConnect()
 //    }
 
     if (mqttClient_ == NULL) {
-        mqttClient_ = new PubSubClient(*hostName, AZURE_MQTT_SERVER_PORT, client_);
+        mqttClient_ = new PubSubClient(*currentHostname_, AZURE_MQTT_SERVER_PORT, client_);
 
         // Add callback
         using namespace std::placeholders;

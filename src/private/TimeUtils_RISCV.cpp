@@ -1,9 +1,13 @@
 //
 // Created by Andri Yadi on 14/04/20.
 //
-
+#include <Arduino.h>
 #if defined(RISCV)
 
+#include <rtc.h>
+#include <time.h>
+
+#include "wifi/DxWiFi.h"
 #include "../TimeUtils.h"
 
 #if !USE_WIFI_BUILTIN_SNTP
