@@ -50,10 +50,10 @@ bool AzureIoTLiteClient::begin(AzureIoTConfig_t *config)
     
     config_ = config;
 
-    changeEventTo(AzureIoTClientEventNTPSyncing);
-    if (requestTime()) {
-        changeEventTo(AzureIoTClientEventNTPSyncSuccess);
-    }
+    // changeEventTo(AzureIoTClientEventNTPSyncing);
+    // if (requestTime()) {
+    //     changeEventTo(AzureIoTClientEventNTPSyncSuccess);
+    // }
 
     return true;
 }
@@ -91,6 +91,13 @@ bool AzureIoTLiteClient::disconnect() {
 
 bool AzureIoTLiteClient::run()
 {
+    if (currentClientEvent_ == AzureIoTClientEventUnknown) {
+        changeEventTo(AzureIoTClientEventNTPSyncing);
+        if (requestTime()) {
+            changeEventTo(AzureIoTClientEventNTPSyncSuccess);
+        }
+    }
+
     if (currentClientEvent_ == AzureIoTClientEventNTPSyncing) {
         if (requestTime()) {
             changeEventTo(AzureIoTClientEventNTPSyncSuccess);
@@ -110,13 +117,18 @@ bool AzureIoTLiteClient::run()
     if (currentClientEvent_ == AzureIoTClientEventDisconnected) {
         if (millis() - lastReconnectAttempt_ > 5000) {
             lastReconnectAttempt_ = millis();
-//            IOTC_LOG("MQTT reconnecting from LOOP...");
+
+            // IOTC_LOG("MQTT reconnecting from LOOP...");
 
             // Attempt to reconnect here
-
-//            if (reconnectMqtt()) {
-//                lastReconnectAttempt_ = 0;
-//            }
+            if (currentUsername_.getLength() > 0 && currentPassword_.getLength() > 0) {
+                bool ret = reconnectMqtt(*currentDeviceId_, *currentUsername_, *currentPassword_);
+                if (ret) {
+                    lastReconnectAttempt_ = 0;
+                    notifyConnectionStatusCallback(AzureIoTConnectionOK);
+                }
+                return ret;
+            }
             return false;
         }
     }
@@ -649,7 +661,7 @@ void AzureIoTLiteClient::notifySettingsUpdatedCallback(AzureIOT::StringBuffer &t
         info.statusCode = 200;
         info.callbackResponse = NULL;
 
-        callbacks_[/*IOTCallbacks::*/ ::AzureIoTCallbackSettingsUpdated](AzureIoTCallbackSettingsUpdated, &info);
+        callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackSettingsUpdated](AzureIoTCallbackSettingsUpdated, &info);
 
         if (topicName.startsWith(
                 "$iothub/twin/PATCH/properties/desired/",
@@ -677,7 +689,7 @@ void AzureIoTLiteClient::notifyConfirmationCallback(const char *buffer, size_t s
         info.statusCode = (int)result;
         info.callbackResponse = NULL;
 
-        callbacks_[/*IOTCallbacks::*/ ::AzureIoTCallbackMessageSent](AzureIoTCallbackSettingsUpdated, &info);
+        callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackMessageSent](AzureIoTCallbackSettingsUpdated, &info);
     }
 }
 
@@ -692,7 +704,7 @@ void AzureIoTLiteClient::notifyErrorCallback(const char *message) {
         info.statusCode = 1;
         info.callbackResponse = NULL;
 
-        callbacks_[/*IOTCallbacks::*/ ::AzureIoTCallbackMessageSent](AzureIoTCallbackError, &info);
+        callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackMessageSent](AzureIoTCallbackError, &info);
     }
 }
 
@@ -707,12 +719,6 @@ void AzureIoTLiteClient::notifyConnectionStatusCallback(AzureIoTConnectionState_
         info.statusCode = status;
         info.callbackResponse = NULL;
 
-        callbacks_[/*IOTCallbacks::*/ ::AzureIoTCallbackMessageSent](AzureIoTCallbackConnectionStatus, &info);
+        callbacks_[/*AzureIoTCallback_e::*/ ::AzureIoTCallbackMessageSent](AzureIoTCallbackConnectionStatus, &info);
     }
 }
-
-
-
-
-
-

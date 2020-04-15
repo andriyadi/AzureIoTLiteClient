@@ -14,7 +14,7 @@ class StringBuffer
     unsigned int length;
 
 public:
-    StringBuffer() : data(NULL), immutable(NULL), length(0) {}
+    StringBuffer(): data(NULL), immutable(NULL), length(0) {}
 
     StringBuffer(StringBuffer &buffer);
 
@@ -35,7 +35,7 @@ public:
     int32_t indexOf(const char *look_for, size_t look_for_length,
                     int32_t start_index = 0);
 
-#if defined(__MBED__) || defined(ARDUINO)
+#if defined(__MBED__) || defined(ARDUINO) || defined(RISCV)
     bool hash(const char *key, unsigned key_length);
 #endif
 

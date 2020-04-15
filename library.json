@@ -1,0 +1,18 @@
+{
+  "name": "AzureIoTLiteClient",
+  "keywords": "iot, azure, azure iot, azure iot hub, azure iot central, esp32, ESPectro, arduino",
+  "description": "Azure IoT Hub / Central lite client library for ESP32, using MQTT",
+  "authors":
+  {
+    "name": "Andri Yadi",
+    "url": "http://www.dycodex.com"
+  },
+  "version": "0.1.0",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/andriyadi/AzureIoTLiteClient"
+  },
+  "frameworks": "arduino",
+  "platforms": ["espressif32", "kendryte210"]
+}

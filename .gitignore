@@ -8,3 +8,6 @@ _backups/
 .idea/
 src/main.cpp
 src/explores/
+.vscode
+.vscode/
+.pio
