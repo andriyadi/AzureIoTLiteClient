@@ -16,7 +16,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "base64.h"
+#include "Base64.h"
 
 #if defined(ESP32)
 #include <pgmspace.h>
