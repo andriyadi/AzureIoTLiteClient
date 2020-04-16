@@ -50,16 +50,6 @@ typedef short IotcLogLevel;
 #define iotc_min(a, b) (a < b ? a : b)
 
 
-#define STRING_BUFFER_16 16
-#define STRING_BUFFER_32 32
-#define STRING_BUFFER_64 64
-#define STRING_BUFFER_128 128
-#define STRING_BUFFER_256 256
-#define STRING_BUFFER_512 512
-#define STRING_BUFFER_1024 1024
-#define STRING_BUFFER_4096 4096
-
-
 #define AZIOTC_API_MAJOR_VERSION 0.
 #define AZIOTC_API_MINOR_VERSION 3.
 #define AZIOTC_API_PATCH_VERSION 0

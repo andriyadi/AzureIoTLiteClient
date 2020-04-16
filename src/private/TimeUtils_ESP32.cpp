@@ -25,7 +25,7 @@ void initializeSntp() {
     sntpInitted = true;
 }
 
-bool requestTime() {
+bool requestTime(int timezone) {
 
     initializeSntp();
 
@@ -54,7 +54,7 @@ long getEpoch() {
     // Is time set? If not, tm_year will be (1970 - 1900).
     if (timeinfo.tm_year < (2016 - 1900)) {
         DEBUGLOG("Time is not set yet. Connecting to WiFi and getting time over NTP.");
-        requestTime();
+        requestTime(0);
         // update 'now' variable with current time
         time(&now);
     }

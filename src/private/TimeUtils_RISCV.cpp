@@ -7,7 +7,7 @@
 #include <rtc.h>
 #include <time.h>
 
-#include "wifi/DxWiFi.h"
+#include "../../wifi/DxWiFi.h"
 #include "../TimeUtils.h"
 
 #if !USE_WIFI_BUILTIN_SNTP
@@ -16,7 +16,7 @@ static NTP *ntp_ = NULL;
 static WiFiEspUDP *wifiUdp_ = NULL;
 #endif // End of !USE_WIFI_BUILTIN_SNTP
 
-bool requestTime() {
+bool requestTime(int timezone) {
 #if !USE_WIFI_BUILTIN_SNTP
     if (ntp_ == NULL)
     {
@@ -36,7 +36,7 @@ bool requestTime() {
 #else
 
     long epoch; char ansStr[40];
-    if (DxWiFi.getTime(epoch, ansStr, 7)) {
+    if (DxWiFi.getTime(epoch, ansStr, timezone)) {
         DEBUGLOG("Got time %ld -> %s\r\n", epoch, ansStr);
 
         processTime(epoch);

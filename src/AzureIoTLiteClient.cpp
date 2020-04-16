@@ -93,13 +93,13 @@ bool AzureIoTLiteClient::run()
 {
     if (currentClientEvent_ == AzureIoTClientEventUnknown) {
         changeEventTo(AzureIoTClientEventNTPSyncing);
-        if (requestTime()) {
+        if (requestTime(0)) {
             changeEventTo(AzureIoTClientEventNTPSyncSuccess);
         }
     }
 
     if (currentClientEvent_ == AzureIoTClientEventNTPSyncing) {
-        if (requestTime()) {
+        if (requestTime(0)) {
             changeEventTo(AzureIoTClientEventNTPSyncSuccess);
         }
         else {
