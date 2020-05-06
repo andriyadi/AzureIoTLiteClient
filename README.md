@@ -229,30 +229,29 @@ void loop() {
     }
 
     unsigned long ms = millis();
-    if (ms - lastTick > 10000) {  // send telemetry every 10 seconds
+    if (ms - lastTick > 15000) {  // send telemetry every 10 seconds
         char msg[64] = {0};
         int pos = 0;
         bool errorCode = false;
 
         lastTick = ms;
 
-        if (loopId++ % 2 == 0) {
-            // Send telemetry
-            long tempVal = random(35, 40);
+        // Randomize to simulate temperature
+        long tempVal = random(35, 40);
+
+        // Send telemetry
+        if (tempVal >= 38) {
+            pos = snprintf(msg, sizeof(msg) - 1, R"({"temperature": %.2f, "temperatureAlert": %d})", tempVal*1.0f, (tempVal >= 38));
+            msg[pos] = 0;
+            errorCode = iotclient.sendTelemetry(msg, pos);
+        } else {
             pos = snprintf(msg, sizeof(msg) - 1, "{\"temperature\": %.2f}", tempVal*1.0f);
             msg[pos] = 0;
             errorCode = iotclient.sendTelemetry(msg, pos);
+        }
 
-            // Send property
-            pos = snprintf(msg, sizeof(msg) - 1, "{\"temperatureAlert\": %d}", (tempVal >= 38));
-            msg[pos] = 0;
-            errorCode = iotclient.sendProperty(msg, pos);
-
-        } else {
-            // Send property
-            pos = snprintf(msg, sizeof(msg) - 1, "{\"wornMask\": %d}", (random(0, 100) % 2 == 0));
-            msg[pos] = 0;
-            errorCode = iotclient.sendProperty(msg, pos);
+        if (!errorCode) {
+            LOG_ERROR("Sending message has failed");
         }
 
         if (!errorCode) {
@@ -261,6 +260,11 @@ void loop() {
     }
 }
 ```
+### Invoke Direct Method
+
+To invoke direct method of the device from the cloud, in this example, using VSCode, here's the flow:
+
+![Invoke direct method](https://github.com/andriyadi/AzureIoTLiteClient/raw/master/assets/InvokeDirectMethod.jpeg)
 
 ## Credits
 
