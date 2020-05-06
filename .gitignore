@@ -11,3 +11,5 @@ src/explores/
 .vscode
 .vscode/
 .pio
+platformio.ini
+platformio.ini
